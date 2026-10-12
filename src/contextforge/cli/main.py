@@ -156,17 +156,22 @@ class DataPipelineManager:
 
     benchmark_text = f"```python\n{synthetic_code}\n```\n\n{synthetic_docs}"
 
-    strategies = ["balanced", "aggressive", "code_focused", "conservative"]
+    presets = [
+        ("balanced", 0.45),
+        ("aggressive", 0.25),
+        ("code_focused", 0.35),
+        ("conservative", 0.65),
+    ]
     table = Table(title="ContextForge Preset Benchmarks", border_style="cyan")
-    table.add_column("Preset", style="bold")
+    table.add_column("Preset", style="bold", min_width=13)
     table.add_column("Original", justify="right")
     table.add_column("Compacted", justify="right")
     table.add_column("Reduction %", justify="right", style="bold green")
     table.add_column("Latency (ms)", justify="right")
     table.add_column("Est. TTFT Saved", justify="right", style="bold yellow")
 
-    for s in strategies:
-        _, meta = pipeline.compact_text(benchmark_text, strategy=s)
+    for s, ratio in presets:
+        _, meta = pipeline.compact_text(benchmark_text, strategy=s, target_ratio=ratio)
         reduction = round((1.0 - meta.compression_ratio) * 100, 1)
         table.add_row(
             s.replace("_", " ").title(),
