@@ -49,14 +49,17 @@ class KvCacheOptimizer:
         self,
         messages: List[ChatMessage],
         preserve_recent_turns: int = 3,
-    ) -> Tuple[List[ChatMessage], List[ChatMessage], str]:
+        recent_token_budget: int = 4096,
+    ) -> Tuple[List[ChatMessage], List[ChatMessage], List[ChatMessage], str]:
         """Partition messages into canonical static prefix, compressible middle, and preserved tail.
+
+        Respects both turn count and recent_token_budget to prevent massive context overrun.
 
         Returns:
             (prefix_messages, compressible_messages, recent_messages, prefix_hash)
         """
         if not messages:
-            return [], [], ""
+            return [], [], [], ""
 
         prefix_messages: List[ChatMessage] = []
         middle_messages: List[ChatMessage] = []
@@ -75,16 +78,33 @@ class KvCacheOptimizer:
             )
             start_idx += 1
 
-        # Determine cutoff for recent turns
-        total_remaining = len(messages) - start_idx
-        if total_remaining <= preserve_recent_turns:
-            # Everything remaining is recent
-            recent_messages = messages[start_idx:]
-            middle_messages = []
-        else:
-            split_point = len(messages) - preserve_recent_turns
-            middle_messages = messages[start_idx:split_point]
-            recent_messages = messages[split_point:]
+        remaining = messages[start_idx:]
+        if not remaining:
+            prefix_hash = self.compute_prefix_hash(prefix_messages)
+            return prefix_messages, [], [], prefix_hash
+
+        # Target number of turns to preserve is preserve_recent_turns
+        target_recent_count = min(preserve_recent_turns, len(remaining))
+
+        # Check if the recent turns fit within recent_token_budget (keeping at least 1 turn)
+        from contextforge.core.tokenizer import count_tokens
+
+        accumulated_tokens = 0
+        actual_recent_count = 0
+
+        for msg in reversed(remaining[-target_recent_count:]):
+            msg_tokens = count_tokens(msg.content or "")
+            if actual_recent_count >= 1 and (accumulated_tokens + msg_tokens > recent_token_budget):
+                break
+            accumulated_tokens += msg_tokens
+            actual_recent_count += 1
+
+        actual_recent_count = max(1, actual_recent_count)
+        split_idx = len(remaining) - actual_recent_count
+
+        middle_messages = remaining[:split_idx]
+        recent_messages = remaining[split_idx:]
 
         prefix_hash = self.compute_prefix_hash(prefix_messages)
         return prefix_messages, middle_messages, recent_messages, prefix_hash
+

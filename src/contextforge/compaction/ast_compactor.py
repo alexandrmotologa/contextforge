@@ -245,8 +245,14 @@ class PythonCompactor:
         return "\n".join(cleaned)
 
 
+from contextforge.compaction.polyglot_compactor import PolyglotCompactor
+
+
 class PolyglotStructuralCompactor:
     """Structural compactor for TypeScript, JavaScript, Go, Rust, and C-like syntaxes."""
+
+    def __init__(self):
+        self._polyglot = PolyglotCompactor()
 
     def compact(
         self,
@@ -255,80 +261,8 @@ class PolyglotStructuralCompactor:
         keep_symbols: Set[str],
         aggressive: bool = False,
     ) -> Tuple[str, AstSummary]:
-        original_lines = len(code.splitlines())
-        original_tokens = count_tokens(code)
-
-        lines = code.splitlines()
-        output_lines: List[str] = []
-        in_block_comment = False
-        inside_function_body = False
-        current_indent = 0
-        functions_analyzed = 0
-        functions_skeletonized = 0
-
-        # Pattern matching function or method declarations in JS/TS/Go/Rust
-        func_sig_pattern = re.compile(
-            r"^\s*(?:export\s+)?(?:async\s+)?(?:function|func|fn|def)\s+([a-zA-Z0-9_]+)\b|"
-            r"^\s*(?:public|private|protected|async|\s)*([a-zA-Z0-9_]+)\s*\([^)]*\)\s*(?::\s*[^\{]+)?\s*\{"
-        )
-
-        for line in lines:
-            stripped = line.strip()
-
-            # Handle block comments
-            if "/*" in stripped:
-                in_block_comment = True
-            if "*/" in stripped:
-                in_block_comment = False
-                continue
-            if in_block_comment:
-                continue
-
-            # Strip decorative dividers
-            if stripped.startswith("//") and len(stripped) > 10:
-                inner = stripped[2:].strip()
-                if set(inner) in ({'-'}, {'='}, {'*'}, {'/'}):
-                    continue
-
-            # Check for function start
-            match = func_sig_pattern.search(line)
-            if match and "{" in line:
-                name = match.group(1) or match.group(2)
-                functions_analyzed += 1
-                is_pinned = (
-                    name in keep_symbols
-                    or any(s.lower() in name.lower() for s in keep_symbols if len(s) >= 3)
-                    or aggressive is False
-                )
-
-                if aggressive and not is_pinned and not inside_function_body:
-                    # Elide body
-                    head = line[: line.index("{") + 1]
-                    output_lines.append(f"{head} /* elided */ }}")
-                    functions_skeletonized += 1
-                    continue
-
-            output_lines.append(line)
-
-        compacted = "\n".join(output_lines)
-        compacted_tokens = count_tokens(compacted)
-        reduction = 0.0
-        if original_tokens > 0:
-            reduction = round(
-                max(0.0, (original_tokens - compacted_tokens) / original_tokens * 100), 2
-            )
-
-        summary = AstSummary(
-            language=language or "polyglot",
-            original_lines=original_lines,
-            compacted_lines=len(output_lines),
-            functions_analyzed=functions_analyzed,
-            functions_skeletonized=functions_skeletonized,
-            docstrings_trimmed=0,
-            imports_deduplicated=0,
-            reduction_percentage=reduction,
-        )
-        return compacted, summary
+        self._polyglot.aggressive = aggressive
+        return self._polyglot.compact(code, language=language, keep_symbols=keep_symbols)
 
 
 class AstCompactor(BaseCompactor):

@@ -4,8 +4,8 @@ import json
 import time
 import uuid
 from contextlib import asynccontextmanager
-from typing import Any, AsyncGenerator, Dict, Optional
-from fastapi import FastAPI, HTTPException, Request, Response
+from typing import Any, AsyncGenerator, Dict, List, Optional, Set
+from fastapi import FastAPI, HTTPException, Request, Response, WebSocket, WebSocketDisconnect
 from fastapi.responses import HTMLResponse, JSONResponse, StreamingResponse
 import httpx
 from contextforge.compaction.pipeline import CompactionPipeline
@@ -15,8 +15,19 @@ from contextforge.core.models import (
     ChatCompletionResponse,
     CompactionMetadata,
 )
+from contextforge.proxy.metrics import metrics
 from contextforge.proxy.routes import router as management_router
 from contextforge.storage.db import TelemetryDatabase
+
+
+async def broadcast_telemetry(app: FastAPI, event: Dict[str, Any]) -> None:
+    """Broadcast real-time compaction telemetry event to all connected WebSockets."""
+    active_sockets: Set[WebSocket] = getattr(app.state, "active_websockets", set())
+    for ws in list(active_sockets):
+        try:
+            await ws.send_json(event)
+        except Exception:
+            active_sockets.discard(ws)
 
 
 @asynccontextmanager
@@ -28,10 +39,20 @@ async def lifespan(app: FastAPI):
     app.state.db = db
     app.state.pipeline = CompactionPipeline(settings=settings)
     app.state.http_client = httpx.AsyncClient(timeout=settings.upstream_timeout)
+    app.state.active_websockets = set()
 
     yield
 
     await app.state.http_client.aclose()
+
+
+def get_upstream_candidates(settings: Settings) -> List[str]:
+    """Return ordered list of upstream candidate endpoints."""
+    candidates = [settings.upstream_url]
+    for fb in settings.upstream_fallbacks:
+        if fb and fb not in candidates:
+            candidates.append(fb)
+    return candidates
 
 
 def create_app(settings: Optional[Settings] = None) -> FastAPI:
@@ -45,24 +66,45 @@ def create_app(settings: Optional[Settings] = None) -> FastAPI:
         lifespan=lifespan,
     )
     app.state.settings = active_settings
+    app.state.active_websockets = set()
 
-    # Include analytics and direct compression routes
+    # Include analytics, prometheus, and direct compression routes
     app.include_router(management_router)
+
+    @app.websocket("/ws/telemetry")
+    async def websocket_telemetry_endpoint(websocket: WebSocket):
+        """Live WebSocket stream broadcasting proxy compaction events."""
+        await websocket.accept()
+        app.state.active_websockets.add(websocket)
+        try:
+            db: TelemetryDatabase = app.state.db
+            stats = await db.get_summary_stats()
+            await websocket.send_json({"event": "init", "stats": stats})
+            while True:
+                # Keep socket alive and respond to client pings
+                data = await websocket.receive_text()
+                if data == "ping":
+                    await websocket.send_text("pong")
+        except WebSocketDisconnect:
+            pass
+        finally:
+            app.state.active_websockets.discard(websocket)
 
     @app.get("/v1/models")
     async def list_models(request: Request) -> Dict[str, Any]:
         """Forward models query to upstream or return fallback model list."""
         client: httpx.AsyncClient = request.app.state.http_client
-        upstream_url = request.app.state.settings.upstream_url
+        upstream_candidates = get_upstream_candidates(request.app.state.settings)
 
-        try:
-            resp = await client.get(f"{upstream_url}/v1/models")
-            if resp.status_code == 200:
-                return resp.json()
-        except Exception:
-            pass
+        for u in upstream_candidates:
+            try:
+                resp = await client.get(f"{u}/v1/models", timeout=3.0)
+                if resp.status_code == 200:
+                    return resp.json()
+            except Exception:
+                continue
 
-        # Fallback response if upstream is offline
+        # Fallback response if all upstreams are offline
         return {
             "object": "list",
             "data": [
@@ -80,7 +122,7 @@ def create_app(settings: Optional[Settings] = None) -> FastAPI:
         req: ChatCompletionRequest,
         request: Request,
     ):
-        """Intercept chat completions, compact context, and proxy to upstream."""
+        """Intercept chat completions, compact context, and proxy to upstream with failover."""
         pipeline: CompactionPipeline = request.app.state.pipeline
         db: TelemetryDatabase = request.app.state.db
         settings: Settings = request.app.state.settings
@@ -113,13 +155,14 @@ def create_app(settings: Optional[Settings] = None) -> FastAPI:
         payload = req.model_dump(exclude={"compress", "target_ratio", "strategy"}, exclude_none=True)
         payload["messages"] = [m.model_dump(exclude_none=True) for m in compacted_messages]
 
-        upstream_endpoint = f"{settings.upstream_url}/v1/chat/completions"
+        candidate_base_urls = get_upstream_candidates(settings)
 
         # Step 2: Handle streaming vs non-streaming responses
         if req.stream:
             return await _handle_streaming_proxy(
+                app=request.app,
                 client=client,
-                upstream_url=upstream_endpoint,
+                candidate_urls=candidate_base_urls,
                 payload=payload,
                 request_id=req_id,
                 model=req.model,
@@ -128,8 +171,9 @@ def create_app(settings: Optional[Settings] = None) -> FastAPI:
             )
         else:
             return await _handle_buffered_proxy(
+                app=request.app,
                 client=client,
-                upstream_url=upstream_endpoint,
+                candidate_urls=candidate_base_urls,
                 payload=payload,
                 request_id=req_id,
                 model=req.model,
@@ -155,8 +199,9 @@ def create_app(settings: Optional[Settings] = None) -> FastAPI:
 
 
 async def _handle_buffered_proxy(
+    app: FastAPI,
     client: httpx.AsyncClient,
-    upstream_url: str,
+    candidate_urls: List[str],
     payload: Dict[str, Any],
     request_id: str,
     model: str,
@@ -164,25 +209,46 @@ async def _handle_buffered_proxy(
     db: TelemetryDatabase,
     start_ts: float,
 ) -> JSONResponse:
-    """Send request to upstream LLM, inject compaction metrics, and return response."""
-    try:
-        upstream_resp = await client.post(
-            upstream_url,
-            json=payload,
-            headers={"Content-Type": "application/json"},
-        )
-    except httpx.ConnectError:
+    """Send request to upstream LLM pool with automatic failover, inject metrics, and return response."""
+    last_err: Optional[Exception] = None
+    failover_occurred = False
+    upstream_resp = None
+
+    for idx, base_url in enumerate(candidate_urls):
+        url = f"{base_url}/v1/chat/completions"
+        if idx > 0:
+            failover_occurred = True
+        try:
+            upstream_resp = await client.post(
+                url,
+                json=payload,
+                headers={"Content-Type": "application/json"},
+            )
+            if upstream_resp.status_code == 200:
+                break
+            elif upstream_resp.status_code in (502, 503, 504) and idx < len(candidate_urls) - 1:
+                continue
+            else:
+                break
+        except (httpx.ConnectError, httpx.TimeoutException) as e:
+            last_err = e
+            if idx < len(candidate_urls) - 1:
+                continue
+
+    if upstream_resp is None:
         raise HTTPException(
             status_code=502,
-            detail=f"ContextForge could not connect to upstream LLM at {upstream_url}. Is your local runner (Ollama / vLLM / llama.cpp) running?",
+            detail=f"ContextForge could not connect to upstream LLMs ({', '.join(candidate_urls)}). Error: {str(last_err)}",
         )
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Upstream proxy error: {str(e)}")
 
     if upstream_resp.status_code != 200:
         return JSONResponse(
             status_code=upstream_resp.status_code,
-            content=upstream_resp.json() if upstream_resp.headers.get("content-type", "").startswith("application/json") else {"error": upstream_resp.text},
+            content=(
+                upstream_resp.json()
+                if upstream_resp.headers.get("content-type", "").startswith("application/json")
+                else {"error": upstream_resp.text}
+            ),
         )
 
     data = upstream_resp.json()
@@ -195,7 +261,7 @@ async def _handle_buffered_proxy(
 
     data["contextforge_compaction"] = metadata.model_dump()
 
-    # Record telemetry
+    # Record telemetry to DB
     await db.record_transaction(
         request_id=request_id,
         model=model,
@@ -204,47 +270,98 @@ async def _handle_buffered_proxy(
         streaming=False,
     )
 
+    # Record to Prometheus metrics
+    metrics.record_request(
+        model=model,
+        original_tokens=metadata.original_tokens,
+        tokens_saved=metadata.tokens_saved,
+        ttft_saved_seconds=metadata.estimated_ttft_saved_ms / 1000.0,
+        failover_occurred=failover_occurred,
+    )
+
+    # Broadcast WebSocket update
+    duration = round((time.perf_counter() - start_ts) * 1000, 1)
+    await broadcast_telemetry(
+        app,
+        {
+            "event": "new_request",
+            "record": {
+                "id": request_id,
+                "model": model,
+                "original_tokens": metadata.original_tokens,
+                "compacted_tokens": metadata.compacted_tokens,
+                "tokens_saved": metadata.tokens_saved,
+                "compression_ratio": metadata.compression_ratio,
+                "ast_applied": metadata.ast_applied,
+                "streaming": False,
+                "duration_ms": duration,
+            },
+        },
+    )
+
     return JSONResponse(content=data)
 
 
 async def _handle_streaming_proxy(
+    app: FastAPI,
     client: httpx.AsyncClient,
-    upstream_url: str,
+    candidate_urls: List[str],
     payload: Dict[str, Any],
     request_id: str,
     model: str,
     metadata: CompactionMetadata,
     db: TelemetryDatabase,
 ) -> StreamingResponse:
-    """Stream SSE response chunks directly from upstream to client while tracking TTFT."""
+    """Stream SSE response chunks with failover support while tracking TTFT."""
 
     async def event_generator() -> AsyncGenerator[bytes, None]:
         first_token_received = False
         start_time = time.perf_counter()
         ttft_ms = 0.0
+        connected_stream = None
+        failover_occurred = False
 
-        try:
-            async with client.stream(
-                "POST",
-                upstream_url,
-                json=payload,
-                headers={"Content-Type": "application/json"},
-            ) as response:
-                if response.status_code != 200:
-                    err_body = await response.aread()
-                    yield f"data: {json.dumps({'error': err_body.decode()})}\n\n".encode()
+        for idx, base_url in enumerate(candidate_urls):
+            url = f"{base_url}/v1/chat/completions"
+            if idx > 0:
+                failover_occurred = True
+            try:
+                stream_ctx = client.stream(
+                    "POST",
+                    url,
+                    json=payload,
+                    headers={"Content-Type": "application/json"},
+                )
+                response = await stream_ctx.__aenter__()
+                if response.status_code == 200:
+                    connected_stream = (stream_ctx, response)
+                    break
+                else:
+                    await stream_ctx.__aexit__(None, None, None)
+                    if idx == len(candidate_urls) - 1:
+                        yield f"data: {json.dumps({'error': f'Upstream error {response.status_code}'})}\n\n".encode()
+                        return
+            except Exception:
+                if idx == len(candidate_urls) - 1:
+                    yield f"data: {json.dumps({'error': 'Connection to all upstreams failed'})}\n\n".encode()
                     return
 
-                async for line in response.aiter_lines():
-                    if line:
-                        if not first_token_received and line.startswith("data: "):
-                            first_token_received = True
-                            ttft_ms = round((time.perf_counter() - start_time) * 1000, 2)
-                        yield f"{line}\n\n".encode()
+        if not connected_stream:
+            yield f"data: {json.dumps({'error': 'No available upstream runner'})}\n\n".encode()
+            return
 
+        stream_ctx, response = connected_stream
+        try:
+            async for line in response.aiter_lines():
+                if line:
+                    if not first_token_received and line.startswith("data: "):
+                        first_token_received = True
+                        ttft_ms = round((time.perf_counter() - start_time) * 1000, 2)
+                    yield f"{line}\n\n".encode()
         except Exception as e:
             yield f"data: {json.dumps({'error': str(e)})}\n\n".encode()
         finally:
+            await stream_ctx.__aexit__(None, None, None)
             # Record telemetry upon stream termination
             await db.record_transaction(
                 request_id=request_id,
@@ -252,6 +369,33 @@ async def _handle_streaming_proxy(
                 endpoint="/v1/chat/completions (stream)",
                 metadata=metadata,
                 streaming=True,
+            )
+
+            metrics.record_request(
+                model=model,
+                original_tokens=metadata.original_tokens,
+                tokens_saved=metadata.tokens_saved,
+                ttft_saved_seconds=metadata.estimated_ttft_saved_ms / 1000.0,
+                failover_occurred=failover_occurred,
+            )
+
+            duration = round((time.perf_counter() - start_time) * 1000, 1)
+            await broadcast_telemetry(
+                app,
+                {
+                    "event": "new_request",
+                    "record": {
+                        "id": request_id,
+                        "model": model,
+                        "original_tokens": metadata.original_tokens,
+                        "compacted_tokens": metadata.compacted_tokens,
+                        "tokens_saved": metadata.tokens_saved,
+                        "compression_ratio": metadata.compression_ratio,
+                        "ast_applied": metadata.ast_applied,
+                        "streaming": True,
+                        "duration_ms": duration,
+                    },
+                },
             )
 
     return StreamingResponse(

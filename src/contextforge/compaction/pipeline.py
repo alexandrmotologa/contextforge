@@ -4,8 +4,10 @@ import time
 from typing import List, Optional, Tuple
 from contextforge.compaction.ast_compactor import AstCompactor
 from contextforge.compaction.base import CompactorContext
+from contextforge.compaction.classifier import StrategyClassifier
 from contextforge.compaction.kv_optimizer import KvCacheOptimizer
 from contextforge.compaction.semantic_compactor import SemanticCompactor
+from contextforge.compaction.tool_guard import ToolGuard
 from contextforge.core.config import Settings, get_settings
 from contextforge.core.models import (
     AstSummary,
@@ -22,6 +24,8 @@ class CompactionPipeline:
         self.settings = settings or get_settings()
         self.ast_compactor = AstCompactor()
         self.semantic_compactor = SemanticCompactor()
+        self.classifier = StrategyClassifier()
+        self.tool_guard = ToolGuard(enabled=self.settings.tool_protection_enabled)
         self.kv_optimizer = KvCacheOptimizer(
             attention_sink_tokens=self.settings.attention_sink_tokens
         )
@@ -37,7 +41,13 @@ class CompactionPipeline:
         original_tokens = count_messages_tokens(messages)
 
         active_ratio = target_ratio or self.settings.target_ratio
-        active_strategy = strategy or self.settings.default_strategy
+        req_strategy = strategy or self.settings.default_strategy
+
+        # Auto-tune strategy if requested
+        if req_strategy == "auto":
+            active_strategy, _ = self.classifier.classify_messages(messages)
+        else:
+            active_strategy = req_strategy
 
         # If below threshold, pass through with zero modification
         if original_tokens < self.settings.min_tokens_to_compress:
@@ -58,6 +68,7 @@ class CompactionPipeline:
         prefix_msgs, middle_msgs, recent_msgs, prefix_hash = self.kv_optimizer.optimize_messages(
             messages,
             preserve_recent_turns=self.settings.preserve_recent_turns,
+            recent_token_budget=self.settings.recent_token_budget,
         )
 
         # Extract active query context from the most recent user message
@@ -84,7 +95,14 @@ class CompactionPipeline:
                 compacted_middle.append(msg)
                 continue
 
+            # If message is protected (tool response or has tool calls), keep verbatim
+            if self.tool_guard.is_protected_message(msg):
+                compacted_middle.append(msg)
+                continue
+
             content = msg.content
+            # Shield embedded tool definitions and JSON schemas
+            content, tool_map = self.tool_guard.shield_text(content)
 
             # Stage 1: AST Code Compaction on code blocks
             if self.settings.ast_compaction_enabled:
@@ -101,6 +119,9 @@ class CompactionPipeline:
                 content = sem_res.compacted_text
                 total_kept_sentences += sem_res.metadata.get("semantic_sentences_kept", 0)
                 total_dropped_sentences += sem_res.metadata.get("semantic_sentences_dropped", 0)
+
+            # Restore shielded tool schemas
+            content = self.tool_guard.unshield_text(content, tool_map)
 
             compacted_middle.append(
                 ChatMessage(
@@ -153,7 +174,12 @@ class CompactionPipeline:
         original_tokens = count_tokens(text)
 
         active_ratio = target_ratio or self.settings.target_ratio
-        active_strategy = strategy or self.settings.default_strategy
+        req_strategy = strategy or self.settings.default_strategy
+
+        if req_strategy == "auto":
+            active_strategy, _ = self.classifier.classify_text(text, query_context=query_context)
+        else:
+            active_strategy = req_strategy
 
         ctx = CompactorContext(
             target_ratio=active_ratio,
@@ -161,7 +187,7 @@ class CompactionPipeline:
             query_context=query_context,
         )
 
-        working_text = text
+        working_text, tool_map = self.tool_guard.shield_text(text)
         ast_applied = False
         ast_summaries: List[AstSummary] = []
 
@@ -182,6 +208,9 @@ class CompactionPipeline:
             working_text = sem_res.compacted_text
             kept_sentences = sem_res.metadata.get("semantic_sentences_kept", 0)
             dropped_sentences = sem_res.metadata.get("semantic_sentences_dropped", 0)
+
+        # Restore shielded tool schemas
+        working_text = self.tool_guard.unshield_text(working_text, tool_map)
 
         compacted_tokens = count_tokens(working_text)
         tokens_saved = max(0, original_tokens - compacted_tokens)

@@ -10,7 +10,7 @@
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.115+-009688.svg?style=flat&logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com)
 [![Typer](https://img.shields.io/badge/CLI-Typer-0052CC.svg?style=flat)](https://typer.tiangolo.com/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-[![Tests: 32 Passing](https://img.shields.io/badge/Tests-32%20Passed%20(94%25%20cov)-success.svg)](tests/)
+[![Tests: 46 Passing](https://img.shields.io/badge/Tests-46%20Passed%20(92%25%20cov)-success.svg)](tests/)
 
 </div>
 
@@ -54,10 +54,15 @@ Measured across representative multi-turn conversations and polyglot codebases u
 ## Key features
 
 - **AST code compactor:** Real Python AST parsing that trims verbose docstrings, deduplicates repeated imports, and skeletonizes uncalled helper functions while keeping queried symbols intact.
+- **Polyglot structural compaction:** Language-aware skeletonization and import merging for TypeScript, JavaScript, Go, and Rust.
+- **Adaptive auto-tuning classifier:** Analyzes incoming prompts and automatically selects between `code_focused`, `aggressive`, `balanced`, or `conservative` modes.
+- **Tool-call and schema shield:** Protects OpenAPI schemas, JSON Schema blocks, and tool definitions from lossy compaction so agentic function calling never breaks.
 - **Graph-based semantic extraction:** TextRank sentence graph ranking combined with BM25 query salience scoring to preserve relevant facts.
 - **KV-cache prefix alignment:** Normalizes whitespace and canonicalizes prompt prefixes so local inference engines (vLLM, llama.cpp, Ollama) hit pre-computed KV-cache blocks.
+- **Upstream failover pool:** Automatically redirects traffic to secondary runners if the primary engine encounters connection errors or GPU memory exhaustion.
 - **Drop-in OpenAI proxy:** Listens on port 8000 and forwards requests to `/v1/chat/completions` and `/v1/models` with full Server-Sent Events (SSE) streaming support.
-- **Interactive Web dashboard:** Dark-mode analytics UI with real-time token savings, TTFT tracking, request inspection, and an interactive compression playground.
+- **Interactive Web dashboard:** Dark-mode analytics UI with real-time token savings, TTFT tracking, request inspection, visual diff viewer, and WebSocket live updates.
+- **Prometheus exporter:** Native `/metrics` endpoint for real-time monitoring and Grafana dashboard integration.
 - **Rich CLI:** Typer-based command line tool for running proxies, benchmarking presets, inspecting telemetry, and compressing standalone files.
 
 ---

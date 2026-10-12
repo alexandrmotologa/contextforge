@@ -28,6 +28,9 @@ class ChatCompletionRequest(BaseModel):
     presence_penalty: Optional[float] = 0.0
     frequency_penalty: Optional[float] = 0.0
     user: Optional[str] = None
+    tools: Optional[List[Dict[str, Any]]] = None
+    tool_choice: Optional[Union[str, Dict[str, Any]]] = None
+    response_format: Optional[Dict[str, Any]] = None
 
     # ContextForge extension parameters (optional)
     compress: Optional[bool] = Field(
@@ -38,9 +41,9 @@ class ChatCompletionRequest(BaseModel):
         default=None,
         description="Override target compaction ratio (e.g. 0.45)",
     )
-    strategy: Optional[Literal["balanced", "aggressive", "code_focused", "conservative"]] = Field(
+    strategy: Optional[Literal["auto", "balanced", "aggressive", "code_focused", "conservative"]] = Field(
         default=None,
-        description="Compaction strategy preset override",
+        description="Compaction strategy preset override (auto, balanced, aggressive, code_focused, conservative)",
     )
 
 
@@ -134,7 +137,7 @@ class CompressRequest(BaseModel):
     """Direct API request to compress a prompt or text block."""
 
     content: str
-    strategy: Literal["balanced", "aggressive", "code_focused", "conservative"] = "balanced"
+    strategy: Literal["auto", "balanced", "aggressive", "code_focused", "conservative"] = "auto"
     target_ratio: Optional[float] = 0.45
     query_context: Optional[str] = None
     language: Optional[str] = None

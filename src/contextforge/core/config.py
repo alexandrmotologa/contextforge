@@ -21,6 +21,12 @@ class Settings(BaseSettings):
         description="Read timeout in seconds for upstream completions",
     )
 
+    # Upstream failover pool
+    upstream_fallbacks: list[str] = Field(
+        default_factory=list,
+        description="Fallback upstream LLM endpoints in order of priority",
+    )
+
     # Compaction settings
     target_ratio: float = Field(
         default=0.45,
@@ -37,6 +43,10 @@ class Settings(BaseSettings):
         default=True,
         description="Enable AST-aware code compaction for embedded source files and code blocks",
     )
+    polyglot_compaction_enabled: bool = Field(
+        default=True,
+        description="Enable AST and structural compaction for TypeScript, JavaScript, Go, and Rust",
+    )
     semantic_compaction_enabled: bool = Field(
         default=True,
         description="Enable graph-based extractive semantic compaction for natural language",
@@ -45,11 +55,15 @@ class Settings(BaseSettings):
         default=True,
         description="Enable canonical prompt prefix ordering for KV-cache reuse in local runtimes",
     )
+    tool_protection_enabled: bool = Field(
+        default=True,
+        description="Protect tool calling definitions and JSON schemas from lossy compaction",
+    )
 
     # Strategy configuration
-    default_strategy: Literal["balanced", "aggressive", "code_focused", "conservative"] = Field(
-        default="balanced",
-        description="Default compression preset to apply when not specified in request",
+    default_strategy: Literal["auto", "balanced", "aggressive", "code_focused", "conservative"] = Field(
+        default="auto",
+        description="Default compression preset: auto (adaptive classifier), balanced, aggressive, code_focused, conservative",
     )
 
     # Attention and recall safeguards
@@ -57,6 +71,11 @@ class Settings(BaseSettings):
         default=3,
         ge=1,
         description="Number of most recent conversation turns to keep untouched",
+    )
+    recent_token_budget: int = Field(
+        default=4096,
+        ge=256,
+        description="Maximum uncompressed token budget reserved for recent conversation turns",
     )
     preserve_system_prompt: bool = Field(
         default=True,
@@ -66,6 +85,12 @@ class Settings(BaseSettings):
         default=4,
         ge=1,
         description="Number of initial prefix tokens to preserve for attention sink stability",
+    )
+
+    # Observability & Metrics
+    prometheus_enabled: bool = Field(
+        default=True,
+        description="Expose Prometheus metrics endpoint at /metrics",
     )
 
     # Storage settings
