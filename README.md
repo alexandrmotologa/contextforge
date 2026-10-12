@@ -125,6 +125,12 @@ source .venv/bin/activate  # On Windows: .venv\Scripts\activate
 pip install -e .
 ```
 
+Alternatively, run directly with Docker:
+
+```bash
+docker compose up -d
+```
+
 ---
 
 ## Quick start
