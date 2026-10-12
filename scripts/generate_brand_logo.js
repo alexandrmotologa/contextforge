@@ -1,0 +1,306 @@
+const fs = require('fs');
+const path = require('path');
+const { Resvg } = require('@resvg/resvg-js');
+
+function buildContextForgeLogoSvg() {
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <defs>
+    <!-- Luxury Squircle Container Clip -->
+    <clipPath id="squircle-clip">
+      <rect x="24" y="24" width="976" height="976" rx="220" />
+    </clipPath>
+
+    <!-- Electric Cyan Optic & Waveguide Gradients -->
+    <linearGradient id="cyan-glow" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#38bdf8"/>
+      <stop offset="40%" stop-color="#00f5ff"/>
+      <stop offset="100%" stop-color="#0284c7"/>
+    </linearGradient>
+
+    <linearGradient id="cyan-ear" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#00f5ff" stop-opacity="0.95"/>
+      <stop offset="55%" stop-color="#0284c7" stop-opacity="0.5"/>
+      <stop offset="100%" stop-color="#0f172a" stop-opacity="0.1"/>
+    </linearGradient>
+
+    <linearGradient id="amber-core" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#fbbf24"/>
+      <stop offset="100%" stop-color="#d97706"/>
+    </linearGradient>
+
+    <!-- Volumetric High-Contrast Obsidian & Titanium Slate Gradients -->
+    <linearGradient id="g-bright" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#94a3b8"/>
+      <stop offset="100%" stop-color="#475569"/>
+    </linearGradient>
+
+    <linearGradient id="g-lit" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#64748b"/>
+      <stop offset="100%" stop-color="#334155"/>
+    </linearGradient>
+
+    <linearGradient id="g-mid-lit" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#475569"/>
+      <stop offset="100%" stop-color="#1e293b"/>
+    </linearGradient>
+
+    <linearGradient id="g-mid" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#334155"/>
+      <stop offset="100%" stop-color="#1e293b"/>
+    </linearGradient>
+
+    <linearGradient id="g-shadow" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#1e293b"/>
+      <stop offset="100%" stop-color="#0f172a"/>
+    </linearGradient>
+
+    <linearGradient id="g-dark" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#141d2e"/>
+      <stop offset="100%" stop-color="#080d1a"/>
+    </linearGradient>
+
+    <!-- Drop Shadow Filters -->
+    <filter id="subtle-shadow" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="16" stdDeviation="22" flood-color="#070a12" flood-opacity="0.25" />
+    </filter>
+
+    <filter id="eye-glow" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="0" dy="0" stdDeviation="8" flood-color="#00f5ff" flood-opacity="0.85" />
+    </filter>
+  </defs>
+
+  <!-- Luxury White Squircle Container -->
+  <rect x="24" y="24" width="976" height="976" rx="220" fill="#ffffff" stroke="#e2e8f0" stroke-width="6" />
+
+  <g clip-path="url(#squircle-clip)">
+    <!-- Crisp Ambient Studio Base -->
+    <rect x="24" y="24" width="976" height="976" fill="#f8fafc" />
+    <circle cx="512" cy="490" r="380" fill="#f1f5f9" />
+
+    <g transform="translate(512, 512)" filter="url(#subtle-shadow)">
+
+      <!-- Hexagonal Architectural Gateway Frame -->
+      <polygon points="
+        0,-415
+        360,-208
+        360,208
+        0,415
+        -360,208
+        -360,-208
+      " fill="none" stroke="#0f172a" stroke-width="36" stroke-linejoin="round" />
+
+      <polygon points="
+        0,-380
+        328,-190
+        328,190
+        0,380
+        -328,190
+        -328,-190
+      " fill="none" stroke="#00f5ff" stroke-width="4" opacity="0.45" stroke-dasharray="16, 12" />
+
+      <!-- Gateway Corner Telemetry Anchors -->
+      <circle cx="0" cy="-415" r="8" fill="#00f5ff" />
+      <circle cx="360" cy="-208" r="8" fill="#00f5ff" />
+      <circle cx="360" cy="208" r="8" fill="#00f5ff" />
+      <circle cx="0" cy="415" r="8" fill="#00f5ff" />
+      <circle cx="-360" cy="208" r="8" fill="#00f5ff" />
+      <circle cx="-360" cy="-208" r="8" fill="#00f5ff" />
+
+      <!-- ============================================================== -->
+      <!-- 1. BASE SOLID SILHOUETTES (100% WATERTIGHT - ZERO LEAK)        -->
+      <!-- ============================================================== -->
+
+      <!-- Muscular Forge Neck & Anvil Shoulders -->
+      <path d="
+        M -125,70
+        L -175,175
+        L -255,355
+        L 0,395
+        L 255,355
+        L 175,175
+        L 125,70
+        Z
+      " fill="url(#g-dark)" />
+
+      <!-- Solid Lynx Head Silhouette (Tapered Jaw + Tall Ear Tufts) -->
+      <path d="
+        M 0,-215
+        L 75,-185
+        L 175,-385
+        L 190,-155
+        L 235,10
+        L 210,110
+        L 115,165
+        L 0,195
+        L -115,165
+        L -210,110
+        L -235,10
+        L -190,-155
+        L -175,-385
+        L -75,-185
+        Z
+      " fill="url(#g-dark)" />
+
+      <!-- ============================================================== -->
+      <!-- 2. VOLUMETRIC FACETS & FACIAL PLANES (GEOMETRIC BOREAL LYNX)   -->
+      <!-- ============================================================== -->
+
+      <!-- CROWN & FOREHEAD (Directional High-Contrast Planes) -->
+      <polygon points="0,-215 75,-185 95,-110 0,-115" fill="url(#g-lit)" />
+      <polygon points="0,-215 -75,-185 -95,-110 0,-115" fill="url(#g-shadow)" />
+
+      <polygon points="0,-115 95,-110 75,-35 0,-30" fill="url(#g-bright)" />
+      <polygon points="0,-115 -95,-110 -75,-35 0,-30" fill="url(#g-mid)" />
+
+      <!-- TEMPLES & BROW RIDGES -->
+      <polygon points="75,-185 190,-155 155,-10 95,-110" fill="url(#g-mid-lit)" />
+      <polygon points="-75,-185 -190,-155 -155,-10 -95,-110" fill="url(#g-shadow)" />
+
+      <polygon points="95,-110 155,-10 85,-10 75,-35" fill="url(#g-lit)" />
+      <polygon points="-95,-110 -155,-10 -85,-10 -75,-35" fill="url(#g-dark)" />
+
+      <!-- ICONIC LYNX EAR TUFTS (Precision Antenna Filter) -->
+      <!-- Left Ear Outer & Tuft Blade -->
+      <polygon points="-175,-385 -190,-155 -135,-175" fill="#090d16" />
+      <polygon points="-175,-385 -135,-175 -75,-185" fill="url(#g-shadow)" />
+      <!-- Left Ear Inner Shell Waveguide -->
+      <polygon points="-165,-350 -125,-180 -80,-185" fill="url(#cyan-ear)" />
+
+      <!-- Right Ear Outer & Tuft Blade (Lit) -->
+      <polygon points="175,-385 190,-155 135,-175" fill="url(#g-mid)" />
+      <polygon points="175,-385 135,-175 75,-185" fill="url(#g-lit)" />
+      <!-- Right Ear Inner Shell Waveguide -->
+      <polygon points="165,-350 125,-180 80,-185" fill="url(#cyan-ear)" />
+
+      <!-- WIDE LYNX CHEEK RUFFS (Flaring Lateral Feathering) -->
+      <polygon points="190,-155 235,10 155,-10" fill="url(#g-mid-lit)" />
+      <polygon points="-190,-155 -235,10 -155,-10" fill="url(#g-shadow)" />
+
+      <polygon points="235,10 210,110 135,65 155,-10" fill="url(#g-lit)" />
+      <polygon points="-235,10 -210,110 -135,65 -155,-10" fill="url(#g-dark)" />
+
+      <polygon points="155,-10 135,65 75,35 85,-10" fill="url(#g-bright)" />
+      <polygon points="-155,-10 -135,65 -75,35 -85,-10" fill="url(#g-shadow)" />
+
+      <!-- NOSE BRIDGE (Chiseled Feline Keystones) -->
+      <!-- Center Bridge Ridge -->
+      <polygon points="0,-30 35,-25 30,55 0,65" fill="url(#g-bright)" />
+      <polygon points="0,-30 -35,-25 -30,55 0,65" fill="url(#g-shadow)" />
+
+      <!-- Bridge Flanks -->
+      <polygon points="35,-25 85,-10 75,35 30,55" fill="url(#g-lit)" />
+      <polygon points="-35,-25 -85,-10 -75,35 -30,55" fill="url(#g-dark)" />
+
+      <!-- ============================================================== -->
+      <!-- EYES (PIERCING GUARDIAN OPTICS - BOLD, SHARP, SLANTED)        -->
+      <!-- ============================================================== -->
+      <!-- Left Eye Housing -->
+      <polygon points="-140,-45 -85,-15 -35,-35 -80,-65" fill="#04060c" />
+      <!-- Left Eye Glowing Iris -->
+      <g filter="url(#eye-glow)">
+        <polygon points="-134,-42 -88,-18 -40,-35 -82,-60" fill="url(#cyan-glow)" />
+        <!-- Slit Pupil -->
+        <polygon points="-92,-44 -82,-42 -85,-24 -95,-26" fill="#020617" />
+        <circle cx="-90" cy="-34" r="3.5" fill="#ffffff" />
+      </g>
+
+      <!-- Right Eye Housing -->
+      <polygon points="140,-45 85,-15 35,-35 80,-65" fill="#04060c" />
+      <!-- Right Eye Glowing Iris -->
+      <g filter="url(#eye-glow)">
+        <polygon points="134,-42 88,-18 40,-35 82,-60" fill="url(#cyan-glow)" />
+        <!-- Slit Pupil -->
+        <polygon points="92,-44 82,-42 85,-24 95,-26" fill="#020617" />
+        <circle cx="90" cy="-34" r="3.5" fill="#ffffff" />
+      </g>
+
+      <!-- FELINE NOSE LEATHER PAD -->
+      <polygon points="0,65 30,55 36,92 0,105" fill="#1e293b" />
+      <polygon points="0,65 -30,55 -36,92 0,105" fill="#090d16" />
+      <!-- Specular Highlight on Nose Leather -->
+      <polygon points="0,66 -24,60 0,74 24,60" fill="#38bdf8" opacity="0.95" />
+
+      <!-- LATERAL WHISKER PADS (Lean, Titanium Slate - NO buck teeth!) -->
+      <polygon points="0,105 36,92 56,76 32,126 0,122" fill="url(#g-bright)" />
+      <polygon points="0,105 -36,92 -56,76 -32,126 0,122" fill="url(#g-shadow)" />
+
+      <!-- Lateral Ruffs & Muzzle Base -->
+      <polygon points="56,76 135,65 95,135 32,126" fill="url(#g-lit)" />
+      <polygon points="-56,76 -135,65 -95,135 -32,126" fill="url(#g-dark)" />
+
+      <!-- CHISELED CHIN -->
+      <polygon points="0,122 32,126 0,172" fill="url(#g-bright)" />
+      <polygon points="0,122 -32,126 0,172" fill="url(#g-shadow)" />
+
+      <polygon points="32,126 95,135 115,165 0,195 0,172" fill="url(#g-mid-lit)" />
+      <polygon points="-32,126 -95,135 -115,165 0,195 0,172" fill="url(#g-dark)" />
+
+      <!-- Throat Center Contour -->
+      <polygon points="0,195 45,185 65,240 0,260" fill="url(#g-shadow)" />
+      <polygon points="0,195 -45,185 -65,240 0,260" fill="url(#g-dark)" />
+
+      <!-- ============================================================== -->
+      <!-- 3. FORGE ANVIL COLLAR & EMBER CORE (CONTEXTFORGE METAPHOR)     -->
+      <!-- ============================================================== -->
+      <!-- Armored Anvil Collar Band -->
+      <polygon points="-125,235 -55,230 0,242 55,230 125,235 80,285 0,295 -80,285"
+        fill="#0f172a" stroke="#334155" stroke-width="2.5" />
+
+      <!-- Glowing Forge Core Diamond (Warm Ember Compression Spark) -->
+      <polygon points="0,250 30,278 0,306 -30,278" fill="url(#amber-core)" />
+      <circle cx="0" cy="278" r="4.5" fill="#fef08a" />
+
+      <!-- Chest Armor Plates (Athletic Muscular Contours) -->
+      <polygon points="-55,230 -125,235 -175,175 -95,305 -48,320 0,295" fill="url(#g-shadow)" />
+      <polygon points="55,230 125,235 175,175 95,305 48,320 0,295" fill="url(#g-lit)" />
+
+      <polygon points="-48,320 -95,305 -175,175 -255,355 -115,365 0,395 0,345" fill="url(#g-dark)" />
+      <polygon points="48,320 95,305 175,175 255,355 115,365 0,395 0,345" fill="url(#g-mid-lit)" />
+
+      <polygon points="0,295 48,320 0,345 -48,320" fill="url(#g-shadow)" />
+
+      <!-- Integrated Electric Cyan Precision Seams -->
+      <line x1="0" y1="-215" x2="0" y2="-115" stroke="#00f5ff" stroke-width="2.5" opacity="0.45" />
+      <line x1="0" y1="-115" x2="0" y2="-30" stroke="#00f5ff" stroke-width="2.5" opacity="0.65" />
+      <line x1="0" y1="65" x2="0" y2="105" stroke="#00f5ff" stroke-width="2" opacity="0.5" />
+      <line x1="0" y1="172" x2="0" y2="195" stroke="#00f5ff" stroke-width="2" opacity="0.5" />
+      <line x1="0" y1="345" x2="0" y2="395" stroke="#00f5ff" stroke-width="3" opacity="0.75" />
+      <line x1="-80" y1="285" x2="0" y2="295" stroke="#00f5ff" stroke-width="2" opacity="0.4" />
+      <line x1="80" y1="285" x2="0" y2="295" stroke="#00f5ff" stroke-width="2" opacity="0.4" />
+
+    </g>
+  </g>
+</svg>`;
+}
+
+async function main() {
+  const svgContent = buildContextForgeLogoSvg();
+  const docsDir = path.resolve(__dirname, '..', 'docs', 'images');
+  if (!fs.existsSync(docsDir)) {
+    fs.mkdirSync(docsDir, { recursive: true });
+  }
+
+  const svgPath = path.join(docsDir, 'logo.svg');
+  const pngPath = path.join(docsDir, 'logo.png');
+
+  fs.writeFileSync(svgPath, svgContent, 'utf8');
+  console.log(`Saved master SVG to ${svgPath}`);
+
+  const resvg = new Resvg(svgContent, {
+    fitTo: {
+      mode: 'width',
+      value: 1024,
+    },
+  });
+
+  const pngData = resvg.render();
+  const pngBuffer = pngData.asPng();
+
+  fs.writeFileSync(pngPath, pngBuffer);
+  console.log(`Rendered master PNG (1024x1024) to ${pngPath}`);
+}
+
+main().catch(err => {
+  console.error(err);
+  process.exit(1);
+});

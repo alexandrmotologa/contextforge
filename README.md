@@ -1,18 +1,20 @@
-<div align="center">
+<p align="center">
+  <img src="docs/images/logo.png" alt="ContextForge Logo" width="130" style="border-radius: 24px;" />
+</p>
 
-<img src="docs/images/logo.png" alt="ContextForge Logo" width="160" />
+<h1 align="center">ContextForge</h1>
 
-# ContextForge
+<p align="center">
+  <strong>Intelligent long-context compression and KV-cache optimization proxy for local LLMs</strong>
+</p>
 
-**Intelligent long-context compression and KV-cache optimization proxy for local LLMs**
-
-[![Python 3.10+](https://img.shields.io/badge/python-3.10+-3776AB.svg?style=flat&logo=python&logoColor=white)](https://www.python.org/)
-[![FastAPI](https://img.shields.io/badge/FastAPI-0.115+-009688.svg?style=flat&logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com)
-[![Typer](https://img.shields.io/badge/CLI-Typer-0052CC.svg?style=flat)](https://typer.tiangolo.com/)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-[![Tests: 46 Passing](https://img.shields.io/badge/Tests-46%20Passed%20(92%25%20cov)-success.svg)](tests/)
-
-</div>
+<p align="center">
+  <a href="https://www.python.org/"><img src="https://img.shields.io/badge/python-3.10+-3776AB.svg?style=flat&logo=python&logoColor=white" alt="Python 3.10+"></a>
+  <a href="https://fastapi.tiangolo.com"><img src="https://img.shields.io/badge/FastAPI-0.115+-009688.svg?style=flat&logo=fastapi&logoColor=white" alt="FastAPI"></a>
+  <a href="https://typer.tiangolo.com/"><img src="https://img.shields.io/badge/CLI-Typer-0052CC.svg?style=flat" alt="Typer"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-yellow.svg" alt="License: MIT"></a>
+  <a href="tests/"><img src="https://img.shields.io/badge/Tests-46%20Passed%20(92%25%20cov)-success.svg" alt="Tests: 46 Passing"></a>
+</p>
 
 <p align="center">
   <img src="docs/images/contextforge_demo.gif" alt="ContextForge Live Proxy and Compaction Demo" width="900" />
@@ -194,19 +196,37 @@ contextforge stats
 
 ---
 
-## Web dashboard
+## Web dashboard and visual diff viewer
 
-ContextForge includes an embedded dark-mode dashboard at `http://localhost:8000/dashboard` or `http://localhost:8000/`:
+ContextForge includes an embedded dark-mode web dashboard accessible at `http://localhost:8000/dashboard` with live WebSocket streaming, telemetry export, and an interactive prompt playground.
 
 <p align="center">
-  <img src="docs/images/dashboard.png" alt="ContextForge Web Dashboard" width="900" />
+  <img src="docs/images/dashboard.png" alt="ContextForge Desktop Web Dashboard" width="900" />
+</p>
+
+### Real-time visual diff analysis
+
+Switch between the compacted code view and the interactive visual diff viewer to inspect lines eliminated by AST pruning or TextRank summarization:
+
+<p align="center">
+  <img src="docs/images/diff_viewer.png" alt="ContextForge Visual Diff Viewer" width="900" />
+</p>
+
+### Responsive design
+
+The interface adapts cleanly across screen resolutions, providing full telemetry and playground control on both desktop monitors and mobile devices:
+
+<p align="center">
+  <img src="docs/images/dashboard_mobile.png" alt="ContextForge Responsive Mobile Dashboard" width="380" style="border-radius: 16px; border: 1px solid #1e293b;" />
 </p>
 
 The dashboard displays:
 - Total requests proxied and token reduction percentages
 - Cumulative GPU time to first token (TTFT) saved
 - Live transaction table with token deltas, compression ratios, and AST status
-- An interactive compression playground to test compaction strategies in real time
+- Visual diff highlighting removed boilerplate code in red and retained logic in green
+- Real-time telemetry feed connected via WebSockets
+- Direct CSV and JSON telemetry export buttons
 
 ---
 

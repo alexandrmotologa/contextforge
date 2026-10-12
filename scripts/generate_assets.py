@@ -334,19 +334,23 @@ def create_demo_frames() -> list:
     d4.text((50, 625), "GPU Prefill Acceleration: TTFT reduced by 1,108 ms | KV Cache Prefix HIT", font=f_mono, fill=ACCENT_AMBER)
     frames.append(im4)
 
-    # Frame 5: Web Dashboard Live View
-    dash_full = create_dashboard_image()
-    im5 = dash_full.resize((width, height), Image.Resampling.LANCZOS)
+    # Frame 5: Real Web Dashboard Live View
+    real_dash_path = ASSETS_DIR / "dashboard.png"
+    if real_dash_path.exists():
+        im5 = Image.open(real_dash_path).convert("RGB").resize((width, height), Image.Resampling.LANCZOS)
+    else:
+        im5 = create_dashboard_image().resize((width, height), Image.Resampling.LANCZOS)
     frames.append(im5)
+
+    # Frame 6: Real Visual Diff Viewer Live View
+    real_diff_path = ASSETS_DIR / "diff_viewer.png"
+    if real_diff_path.exists():
+        im6 = Image.open(real_diff_path).convert("RGB").resize((width, height), Image.Resampling.LANCZOS)
+        frames.append(im6)
 
     return frames
 
 def main():
-    print("Generating docs/images/dashboard.png...")
-    dash_img = create_dashboard_image()
-    dash_img.save(ASSETS_DIR / "dashboard.png", "PNG", optimize=True)
-    print("Saved docs/images/dashboard.png")
-
     print("Generating docs/images/cli_benchmark.png...")
     cli_img = create_cli_benchmark_image()
     cli_img.save(ASSETS_DIR / "cli_benchmark.png", "PNG", optimize=True)
@@ -354,8 +358,11 @@ def main():
 
     print("Generating docs/images/contextforge_demo.gif...")
     frames = create_demo_frames()
-    # Frame durations: 1.8s, 1.6s, 2.2s, 2.0s, 2.8s
+    # Frame durations: 1.8s, 1.6s, 2.2s, 2.0s, 2.8s, 2.8s
     durations = [1800, 1600, 2200, 2000, 2800]
+    if len(frames) > 5:
+        durations.append(2800)
+
     frames[0].save(
         ASSETS_DIR / "contextforge_demo.gif",
         save_all=True,
