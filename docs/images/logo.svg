@@ -1,0 +1,148 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <defs>
+    <clipPath id="squircle-clip">
+      <rect x="24" y="24" width="976" height="976" rx="220" />
+    </clipPath>
+
+    <linearGradient id="cyan-glow" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#00f5ff"/>
+      <stop offset="100%" stop-color="#0284c7"/>
+    </linearGradient>
+
+    <linearGradient id="forge-amber" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#f59e0b"/>
+      <stop offset="100%" stop-color="#ea580c"/>
+    </linearGradient>
+
+    <linearGradient id="slate-plate" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#334155"/>
+      <stop offset="100%" stop-color="#1e293b"/>
+    </linearGradient>
+
+    <linearGradient id="dark-obsidian" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#1e293b"/>
+      <stop offset="100%" stop-color="#090d16"/>
+    </linearGradient>
+
+    <filter id="subtle-shadow" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="16" stdDeviation="20" flood-color="#000000" flood-opacity="0.14" />
+    </filter>
+  </defs>
+
+  <!-- Luxury White Squircle Container -->
+  <rect x="24" y="24" width="976" height="976" rx="220" fill="#ffffff" stroke="#e2e8f0" stroke-width="6" />
+
+  <g clip-path="url(#squircle-clip)">
+    <g transform="translate(512, 512)" filter="url(#subtle-shadow)">
+
+      <!-- Hexagonal Architectural Gateway Frame -->
+      <polygon points="
+        0,-400
+        346,-200
+        346,200
+        0,400
+        -346,200
+        -346,-200
+      " fill="none" stroke="#0f172a" stroke-width="38" stroke-linejoin="round" />
+
+      <polygon points="
+        0,-364
+        315,-182
+        315,182
+        0,364
+        -315,182
+        -315,-182
+      " fill="none" stroke="#00f5ff" stroke-width="4" opacity="0.45" stroke-dasharray="16, 12" />
+
+      <!-- Watertight Base Silhouette Path (Zero-Leak Foundation) -->
+      <path d="
+        M 0 -290
+        L 75 -245
+        L 125 -190
+        L 220 -80
+        L 265 60
+        L 230 220
+        L 155 310
+        L 65 340
+        L 0 355
+        L -65 340
+        L -155 310
+        L -230 220
+        L -265 60
+        L -220 -80
+        L -125 -190
+        L -75 -245
+        Z
+      " fill="#0b0f19" />
+
+      <!-- Outer Folded Raven Wings (Symmetrical Facets) -->
+      <!-- Left Outer Wing -->
+      <polygon points="-125,-190 -220,-80 -170,40" fill="#1e293b" />
+      <polygon points="-220,-80 -265,60 -185,120 -170,40" fill="#0f172a" />
+      <polygon points="-265,60 -230,220 -160,195 -185,120" fill="#1e293b" />
+      <polygon points="-230,220 -155,310 -115,230 -160,195" fill="#0f172a" />
+      <polygon points="-155,310 -65,340 -60,260 -115,230" fill="#1e293b" />
+
+      <!-- Right Outer Wing -->
+      <polygon points="125,-190 220,-80 170,40" fill="#334155" />
+      <polygon points="220,-80 265,60 185,120 170,40" fill="#1e293b" />
+      <polygon points="265,60 230,220 160,195 185,120" fill="#334155" />
+      <polygon points="230,220 155,310 115,230 160,195" fill="#1e293b" />
+      <polygon points="155,310 65,340 60,260 115,230" fill="#334155" />
+
+      <!-- Inner Mantle & Chest Plates -->
+      <polygon points="0,-160 -110,-70 -60,50 0,-10" fill="#1e293b" />
+      <polygon points="0,-160 110,-70 60,50 0,-10" fill="#334155" />
+      
+      <polygon points="-110,-70 -170,40 -115,130 -60,50" fill="#0f172a" />
+      <polygon points="110,-70 170,40 115,130 60,50" fill="#1e293b" />
+
+      <!-- Lower Breast & Core Tail Vanes -->
+      <polygon points="0,-10 -60,50 0,165" fill="#1e293b" />
+      <polygon points="0,-10 60,50 0,165" fill="#475569" />
+
+      <polygon points="-60,50 -115,130 -60,260 0,165" fill="#0b0f19" />
+      <polygon points="60,50 115,130 60,260 0,165" fill="#1e293b" />
+
+      <polygon points="0,165 -60,260 0,355" fill="#0f172a" />
+      <polygon points="0,165 60,260 0,355" fill="#334155" />
+
+      <!-- Crown & Head Structure -->
+      <polygon points="0,-290 -75,-245 0,-215" fill="#1e293b" />
+      <polygon points="0,-290 75,-245 0,-215" fill="#334155" />
+
+      <polygon points="-75,-245 -125,-190 -65,-155 0,-215" fill="#0f172a" />
+      <polygon points="75,-245 125,-190 65,-155 0,-215" fill="#1e293b" />
+
+      <polygon points="0,-215 -65,-155 0,-130" fill="#1e293b" />
+      <polygon points="0,-215 65,-155 0,-130" fill="#475569" />
+
+      <!-- Surgical Corvid Beak (Faceted with Forge Amber Tip) -->
+      <!-- Upper Beak Bridge -->
+      <polygon points="0,-130 -35,-85 0,-30" fill="#0f172a" />
+      <polygon points="0,-130 35,-85 0,-30" fill="#1e293b" />
+      
+      <!-- Lower / Mandible Beak -->
+      <polygon points="0,-30 -22,-60 0,-15" fill="#1e293b" />
+      <polygon points="0,-30 22,-60 0,-15" fill="#334155" />
+
+      <!-- Forge Core Accent: Amber Beak Cutting Edge -->
+      <polygon points="0,-65 -15,-40 0,-20" fill="url(#forge-amber)" />
+      <polygon points="0,-65 15,-40 0,-20" fill="#f59e0b" opacity="0.9" />
+
+      <!-- Predator Cant Eyes (Electric Cyan Optics) -->
+      <!-- Left Eye -->
+      <polygon points="-68,-160 -42,-148 -46,-140 -76,-150" fill="url(#cyan-glow)" />
+      <circle cx="-54" cy="-148" r="4.5" fill="#ffffff" />
+
+      <!-- Right Eye -->
+      <polygon points="68,-160 42,-148 46,-140 76,-150" fill="url(#cyan-glow)" />
+      <circle cx="54" cy="-148" r="4.5" fill="#ffffff" />
+
+      <!-- Eye Socket Shading Facets -->
+      <polygon points="-76,-150 -42,-148 -55,-132" fill="#090d16" />
+      <polygon points="76,-150 42,-148 55,-132" fill="#090d16" />
+
+    </g>
+  </g>
+</svg>
